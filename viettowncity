@@ -1,0 +1,273 @@
+-- [[ BLACK HUB - LOADER & SAFE PC EDITION ]] --
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------------------------------------
+-- 1. CHỐNG PHÁT HIỆN & CHỐNG KICK AFK (ANTI-BAN & ANTI-AFK)
+--------------------------------------------------------------------------------
+pcall(function()
+	local rawMeta = getrawmetatable(game)
+	setreadonly(rawMeta, false)
+	local oldIndex = rawMeta.__index
+
+	rawMeta.__index = newcclosure(function(self, idx)
+		if not checkcaller() and (idx == "WalkSpeed" or idx == "JumpHeight") then
+			if idx == "WalkSpeed" then return 16 end
+			if idx == "JumpHeight" then return 7.2 end
+		end
+		return oldIndex(self, idx)
+	end)
+	setreadonly(rawMeta, true)
+end)
+
+LocalPlayer.Idled:Connect(function()
+	VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+	task.wait(1)
+	VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+
+-- Xóa UI cũ nếu có
+if CoreGui:FindFirstChild("BlackHub_LoaderPC") then
+	CoreGui.BlackHub_LoaderPC:Destroy()
+end
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BlackHub_LoaderPC"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+--------------------------------------------------------------------------------
+-- 2. NÚT NỔI (HUB BUTTON)
+--------------------------------------------------------------------------------
+local openBtn = Instance.new("TextButton")
+openBtn.Name = "OpenButton"
+openBtn.Size = UDim2.new(0, 45, 0, 45)
+openBtn.Position = UDim2.new(0, 20, 0.5, -22)
+openBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+openBtn.Text = "HUB"
+openBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+openBtn.TextSize = 13
+openBtn.Font = Enum.Font.GothamBold
+openBtn.Active = true
+openBtn.Draggable = true
+openBtn.Parent = screenGui
+
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(1, 0)
+openCorner.Parent = openBtn
+
+local openStroke = Instance.new("UIStroke")
+openStroke.Color = Color3.fromRGB(60, 60, 60)
+openStroke.Thickness = 1.5
+openStroke.Parent = openBtn
+
+--------------------------------------------------------------------------------
+-- 3. KHUNG MENU CHÍNH
+--------------------------------------------------------------------------------
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 360, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -180, 0.5, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Visible = true
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(35, 35, 35)
+mainStroke.Thickness = 1
+mainStroke.Parent = mainFrame
+
+openBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+--------------------------------------------------------------------------------
+-- 4. TIÊU ĐỀ & PHÍM TẮT BÀN PHÍM
+--------------------------------------------------------------------------------
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 40)
+title.Position = UDim2.new(0, 15, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "BLACK HUB  •  SCRIPT LOADER"
+title.TextColor3 = Color3.fromRGB(240, 240, 240)
+title.TextSize = 12
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+closeBtn.TextSize = 14
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = mainFrame
+
+closeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+end)
+
+local line = Instance.new("Frame")
+line.Size = UDim2.new(1, -30, 0, 1)
+line.Position = UDim2.new(0, 15, 0, 40)
+line.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+line.BorderSizePixel = 0
+line.Parent = mainFrame
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and (input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Delete) then
+		openBtn.Visible = not openBtn.Visible
+	end
+end)
+
+--------------------------------------------------------------------------------
+-- 5. CONTAINER CHỨA NỘI DUNG
+--------------------------------------------------------------------------------
+local container = Instance.new("ScrollingFrame")
+container.Size = UDim2.new(1, -20, 1, -50)
+container.Position = UDim2.new(0, 10, 0, 45)
+container.BackgroundTransparency = 1
+container.BorderSizePixel = 0
+container.ScrollBarThickness = 3
+container.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+container.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 10)
+listLayout.Parent = container
+
+--------------------------------------------------------------------------------
+-- 6. Ô NHẬP LINK SCRIPT (LOADSTRING EXECUTOR)
+--------------------------------------------------------------------------------
+local loaderBox = Instance.new("TextBox")
+loaderBox.Size = UDim2.new(1, -10, 0, 40)
+loaderBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+loaderBox.Text = "https://raw.githubusercontent.com/ValueHat-Script/Valuehat-script/refs/heads/main/IllegalSoccer.lua"
+loaderBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+loaderBox.TextSize = 11
+loaderBox.Font = Enum.Font.Gotham
+loaderBox.ClearTextOnFocus = false
+loaderBox.Parent = container
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 6)
+boxCorner.Parent = loaderBox
+
+local executeBtn = Instance.new("TextButton")
+executeBtn.Size = UDim2.new(1, -10, 0, 38)
+executeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+executeBtn.Text = "CHẠY SCRIPT (LOADSTRING)"
+executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+executeBtn.TextSize = 12
+executeBtn.Font = Enum.Font.GothamBold
+executeBtn.Parent = container
+
+local execCorner = Instance.new("UICorner")
+execCorner.CornerRadius = UDim.new(0, 6)
+execCorner.Parent = executeBtn
+
+-- Sự kiện bấm nút Chạy Loadstring
+executeBtn.MouseButton1Click:Connect(function()
+	local url = loaderBox.Text
+	if url and url ~= "" then
+		pcall(function()
+			loadstring(game:HttpGet(url))()
+		end)
+	end
+end)
+
+--------------------------------------------------------------------------------
+-- 7. CÁC TÍNH NĂNG PHỤ HỖ TRỢ (TOGGLE)
+--------------------------------------------------------------------------------
+local function createToggle(name, defaultState, callback)
+	local state = defaultState or false
+
+	local toggleFrame = Instance.new("Frame")
+	toggleFrame.Size = UDim2.new(1, -10, 0, 40)
+	toggleFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	toggleFrame.Parent = container
+
+	local toggleCorner = Instance.new("UICorner")
+	toggleCorner.CornerRadius = UDim.new(0, 6)
+	toggleCorner.Parent = toggleFrame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.7, 0, 1, 0)
+	label.Position = UDim2.new(0, 12, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(200, 200, 200)
+	label.TextSize = 11
+	label.Font = Enum.Font.Gotham
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = toggleFrame
+
+	local switchBG = Instance.new("Frame")
+	switchBG.Size = UDim2.new(0, 42, 0, 22)
+	switchBG.Position = UDim2.new(1, -52, 0.5, -11)
+	switchBG.BackgroundColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(35, 35, 35)
+	switchBG.Parent = toggleFrame
+
+	local switchCorner = Instance.new("UICorner")
+	switchCorner.CornerRadius = UDim.new(1, 0)
+	switchCorner.Parent = switchBG
+
+	local switchCircle = Instance.new("Frame")
+	switchCircle.Size = UDim2.new(0, 16, 0, 16)
+	switchCircle.Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+	switchCircle.BackgroundColor3 = state and Color3.fromRGB(10, 10, 10) or Color3.fromRGB(120, 120, 120)
+	switchCircle.Parent = switchBG
+
+	local circleCorner = Instance.new("UICorner")
+	circleCorner.CornerRadius = UDim.new(1, 0)
+	circleCorner.Parent = switchCircle
+
+	local clickBtn = Instance.new("TextButton")
+	clickBtn.Size = UDim2.new(1, 0, 1, 0)
+	clickBtn.BackgroundTransparency = 1
+	clickBtn.Text = ""
+	clickBtn.Parent = toggleFrame
+
+	clickBtn.MouseButton1Click:Connect(function()
+		state = not state
+		if state then
+			switchBG.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			switchCircle.Position = UDim2.new(1, -19, 0.5, -8)
+			switchCircle.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+		else
+			switchBG.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+			switchCircle.Position = UDim2.new(0, 3, 0.5, -8)
+			switchCircle.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+		end
+		callback(state)
+	end)
+end
+
+-- Tùy chọn FPS Boost đi kèm
+createToggle("Client Real FPS Boost (Giảm Lag)", false, function(active)
+	if active then
+		Lighting.GlobalShadows = false
+		Lighting.FogEnd = 9e9
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") and not v:IsA("MeshPart") then
+				v.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	else
+		Lighting.GlobalShadows = true
+	end
+end)
